@@ -1,68 +1,67 @@
 import { Canvas } from "@react-three/fiber";
-import {
-  OrbitControls,
-  Grid,
-  Environment,
-} from "@react-three/drei";
+import { OrbitControls, Grid, Environment } from "@react-three/drei";
 import { useState } from "react";
 import * as THREE from "three";
 
+const BODY = "#d9dde1";
+const BODY_DARK = "#363b40";
+const JOINT = "#f28c28";
+const METAL = "#8f969d";
+const TCP = "#ff4538";
 
-/* =========================================================
-   ROBOT MATERIALS
-   ========================================================= */
-
-const BODY_COLOR = "#e4e7eb";
-const JOINT_COLOR = "#f28c28";
-const DARK_COLOR = "#24282d";
-const ACCENT_COLOR = "#d6a84f";
+const deg = (value: number) => THREE.MathUtils.degToRad(value);
 
 
 /* =========================================================
-   ROUNDED ROBOT LINK
+   ARM LINK
    ========================================================= */
 
-function RobotLink({
+function ArmLink({
   length,
-  radius = 0.22,
+  width,
 }: {
   length: number;
-  radius?: number;
+  width: number;
 }) {
   return (
     <group>
 
-      {/* Main rounded arm body */}
+      {/* Main rounded housing */}
       <mesh position={[0, length / 2, 0]}>
         <capsuleGeometry
-          args={[radius, Math.max(length - radius * 2, 0.05), 16, 32]}
+          args={[
+            width,
+            Math.max(length - width * 2, 0.05),
+            16,
+            32,
+          ]}
         />
 
         <meshStandardMaterial
-          color={BODY_COLOR}
-          metalness={0.45}
-          roughness={0.28}
+          color={BODY}
+          metalness={0.35}
+          roughness={0.3}
         />
       </mesh>
 
-      {/* Dark underside */}
+      {/* Dark lower mechanical section */}
       <mesh
         position={[0, length / 2, 0]}
-        scale={[0.72, 0.92, 0.72]}
+        scale={[0.78, 0.9, 0.78]}
       >
         <capsuleGeometry
           args={[
-            radius * 0.9,
-            Math.max(length - radius * 2, 0.05),
+            width * 0.82,
+            Math.max(length - width * 2, 0.05),
             12,
             24,
           ]}
         />
 
         <meshStandardMaterial
-          color={DARK_COLOR}
-          metalness={0.5}
-          roughness={0.35}
+          color={BODY_DARK}
+          metalness={0.65}
+          roughness={0.3}
         />
       </mesh>
 
@@ -72,55 +71,54 @@ function RobotLink({
 
 
 /* =========================================================
-   ROBOT JOINT HOUSING
+   JOINT
    ========================================================= */
 
 function JointHousing({
-  position,
-  rotation = [0, 0, 0],
-  size = 0.3,
+  size,
+  axis = "z",
 }: {
-  position: [number, number, number];
-  rotation?: [number, number, number];
-  size?: number;
+  size: number;
+  axis?: "x" | "y" | "z";
 }) {
-  return (
-    <group
-      position={position}
-      rotation={rotation}
-    >
+  const rotation =
+    axis === "x"
+      ? [0, Math.PI / 2, 0]
+      : axis === "y"
+        ? [Math.PI / 2, 0, 0]
+        : [0, 0, 0];
 
-      {/* Main joint housing */}
+  return (
+    <group>
+
+      {/* Main joint body */}
       <mesh>
-        <sphereGeometry
-          args={[size, 32, 24]}
-        />
+        <sphereGeometry args={[size, 32, 24]} />
 
         <meshStandardMaterial
-          color={BODY_COLOR}
-          metalness={0.5}
-          roughness={0.25}
+          color={BODY}
+          metalness={0.4}
+          roughness={0.28}
         />
       </mesh>
 
-      {/* Orange joint cap */}
+      {/* Orange joint cover */}
       <mesh
-        position={[0, 0, size * 0.82]}
-        rotation={[Math.PI / 2, 0, 0]}
+        rotation={rotation as [number, number, number]}
       >
         <cylinderGeometry
           args={[
-            size * 0.55,
-            size * 0.55,
-            size * 0.18,
+            size * 0.58,
+            size * 0.58,
+            size * 0.22,
             32,
           ]}
         />
 
         <meshStandardMaterial
-          color={JOINT_COLOR}
-          metalness={0.65}
-          roughness={0.22}
+          color={JOINT}
+          metalness={0.55}
+          roughness={0.25}
         />
       </mesh>
 
@@ -133,45 +131,43 @@ function JointHousing({
    BASE
    ========================================================= */
 
-function RobotBase() {
+function Base() {
   return (
     <group>
 
-      {/* Lower base */}
       <mesh position={[0, 0.12, 0]}>
         <cylinderGeometry
-          args={[0.62, 0.72, 0.24, 48]}
+          args={[0.72, 0.82, 0.24, 48]}
         />
 
         <meshStandardMaterial
-          color={DARK_COLOR}
+          color={BODY_DARK}
           metalness={0.75}
           roughness={0.25}
         />
       </mesh>
 
-      {/* Main rotating base */}
-      <mesh position={[0, 0.42, 0]}>
+      <mesh position={[0, 0.38, 0]}>
         <cylinderGeometry
-          args={[0.48, 0.56, 0.42, 48]}
+          args={[0.52, 0.60, 0.40, 48]}
         />
 
         <meshStandardMaterial
-          color={BODY_COLOR}
-          metalness={0.5}
+          color={BODY}
+          metalness={0.45}
           roughness={0.28}
         />
       </mesh>
 
-      {/* Orange ring */}
-      <mesh position={[0, 0.64, 0]}>
-        <cylinderGeometry
-          args={[0.50, 0.50, 0.08, 48]}
+      {/* Joint 1 ring */}
+      <mesh position={[0, 0.60, 0]}>
+        <torusGeometry
+          args={[0.49, 0.045, 16, 48]}
         />
 
         <meshStandardMaterial
-          color={JOINT_COLOR}
-          metalness={0.65}
+          color={JOINT}
+          metalness={0.7}
           roughness={0.22}
         />
       </mesh>
@@ -182,48 +178,44 @@ function RobotBase() {
 
 
 /* =========================================================
-   END EFFECTOR
+   WRIST
    ========================================================= */
 
-function EndEffector() {
+function Wrist() {
   return (
     <group>
 
-      {/* Wrist housing */}
       <mesh>
         <cylinderGeometry
-          args={[0.16, 0.20, 0.28, 32]}
+          args={[0.17, 0.20, 0.32, 32]}
         />
 
         <meshStandardMaterial
-          color={DARK_COLOR}
-          metalness={0.75}
+          color={BODY_DARK}
+          metalness={0.7}
           roughness={0.25}
         />
       </mesh>
 
-      {/* Tool flange */}
-      <mesh position={[0, -0.19, 0]}>
+      <mesh position={[0, -0.20, 0]}>
         <cylinderGeometry
-          args={[0.12, 0.12, 0.08, 32]}
+          args={[0.13, 0.13, 0.08, 32]}
         />
 
         <meshStandardMaterial
-          color="#b8bdc3"
-          metalness={0.8}
-          roughness={0.2}
+          color={METAL}
+          metalness={0.85}
+          roughness={0.18}
         />
       </mesh>
 
       {/* TCP */}
-      <mesh position={[0, -0.30, 0]}>
-        <sphereGeometry
-          args={[0.065, 24, 24]}
-        />
+      <mesh position={[0, -0.31, 0]}>
+        <sphereGeometry args={[0.065, 24, 24]} />
 
         <meshStandardMaterial
-          color="#ff4b32"
-          emissive="#551000"
+          color={TCP}
+          emissive="#550000"
           emissiveIntensity={1.5}
         />
       </mesh>
@@ -234,7 +226,7 @@ function EndEffector() {
 
 
 /* =========================================================
-   ROBOT ARM
+   ROBOT
    ========================================================= */
 
 function RobotArm({
@@ -242,158 +234,120 @@ function RobotArm({
 }: {
   joints: number[];
 }) {
-
-  const [
-    j1,
-    j2,
-    j3,
-    j4,
-    j5,
-    j6,
-  ] = joints;
+  const [j1, j2, j3, j4, j5, j6] = joints;
 
   return (
     <group>
 
-      <RobotBase />
+      <Base />
 
       {/* =================================================
-          J1
+          AXIS 1
          ================================================= */}
 
-      <group
-        rotation={[
-          0,
-          THREE.MathUtils.degToRad(j1),
-          0,
-        ]}
-      >
+      <group rotation={[0, deg(j1), 0]}>
 
-        <mesh position={[0, 0.92, 0]}>
-          <boxGeometry
-            args={[0.48, 0.65, 0.48]}
+        {/* shoulder tower */}
+        <mesh position={[0, 0.88, 0]}>
+          <capsuleGeometry
+            args={[0.25, 0.42, 16, 32]}
           />
 
           <meshStandardMaterial
-            color={BODY_COLOR}
-            metalness={0.5}
-            roughness={0.28}
+            color={BODY}
+            metalness={0.4}
+            roughness={0.3}
           />
         </mesh>
 
-        <JointHousing
-          position={[0, 1.25, 0]}
-          size={0.30}
-        />
+        <JointHousing size={0.31} axis="y" />
 
-        {/* =============================================
-            J2
-           ============================================= */}
+        {/* =================================================
+            AXIS 2
+           ================================================= */}
 
         <group
-          position={[0, 1.25, 0]}
-          rotation={[
-            0,
-            0,
-            THREE.MathUtils.degToRad(j2),
-          ]}
+          position={[0, 1.05, 0]}
+          rotation={[0, 0, deg(j2)]}
         >
 
-          <RobotLink
+          <ArmLink
             length={1.35}
-            radius={0.24}
+            width={0.24}
           />
 
           <JointHousing
-            position={[0, 1.35, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
-            size={0.28}
+            size={0.30}
+            axis="x"
           />
 
-          {/* =========================================
-              J3
-             ========================================= */}
+          {/* =================================================
+              AXIS 3
+             ================================================= */}
 
           <group
             position={[0, 1.35, 0]}
-            rotation={[
-              0,
-              0,
-              THREE.MathUtils.degToRad(j3),
-            ]}
+            rotation={[0, 0, deg(j3)]}
           >
 
-            <RobotLink
-              length={1.05}
-              radius={0.21}
+            <ArmLink
+              length={1.10}
+              width={0.21}
             />
 
             <JointHousing
-              position={[0, 1.05, 0]}
-              rotation={[Math.PI / 2, 0, 0]}
-              size={0.25}
+              size={0.27}
+              axis="x"
             />
 
-            {/* =====================================
-                J4
-               ===================================== */}
+            {/* =================================================
+                AXIS 4
+               ================================================= */}
 
             <group
-              position={[0, 1.05, 0]}
-              rotation={[
-                THREE.MathUtils.degToRad(j4),
-                0,
-                0,
-              ]}
+              position={[0, 1.10, 0]}
+              rotation={[deg(j4), 0, 0]}
             >
 
-              <RobotLink
+              <ArmLink
                 length={0.62}
-                radius={0.18}
+                width={0.17}
               />
 
               <JointHousing
-                position={[0, 0.62, 0]}
-                size={0.22}
+                size={0.23}
+                axis="z"
               />
 
-              {/* =================================
-                  J5
-                 ================================= */}
+              {/* =================================================
+                  AXIS 5
+                 ================================================= */}
 
               <group
                 position={[0, 0.62, 0]}
-                rotation={[
-                  0,
-                  0,
-                  THREE.MathUtils.degToRad(j5),
-                ]}
+                rotation={[0, 0, deg(j5)]}
               >
 
-                <RobotLink
-                  length={0.42}
-                  radius={0.15}
+                <ArmLink
+                  length={0.40}
+                  width={0.14}
                 />
 
                 <JointHousing
-                  position={[0, 0.42, 0]}
                   size={0.19}
+                  axis="x"
                 />
 
-                {/* =================================
-                    J6
-                   ================================= */}
+                {/* =================================================
+                    AXIS 6
+                   ================================================= */}
 
                 <group
-                  position={[0, 0.42, 0]}
-                  rotation={[
-                    THREE.MathUtils.degToRad(j6),
-                    0,
-                    0,
-                  ]}
+                  position={[0, 0.40, 0]}
+                  rotation={[deg(j6), 0, 0]}
                 >
 
-                  <EndEffector />
+                  <Wrist />
 
                 </group>
 
@@ -423,41 +377,28 @@ function JointControl({
 }: {
   index: number;
   value: number;
-  onChange: (
-    index: number,
-    value: number
-  ) => void;
+  onChange: (index: number, value: number) => void;
 }) {
-
   const step = 1;
 
   return (
-    <div
-      style={{
-        marginBottom: "20px",
-      }}
-    >
+    <div style={{ marginBottom: 18 }}>
 
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "7px",
+          marginBottom: 7,
         }}
       >
 
-        <span
-          style={{
-            fontWeight: "bold",
-          }}
-        >
+        <span>
           J{index + 1}
         </span>
 
         <span
           style={{
-            color: ACCENT_COLOR,
+            color: "#d6a84f",
             fontFamily: "monospace",
           }}
         >
@@ -470,11 +411,10 @@ function JointControl({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "7px",
+          gap: 7,
         }}
       >
 
-        {/* MINUS */}
         <button
           onClick={() =>
             onChange(
@@ -483,20 +423,19 @@ function JointControl({
             )
           }
           style={{
-            width: "34px",
-            height: "34px",
-            borderRadius: "6px",
-            border: "1px solid #3b4148",
+            width: 34,
+            height: 34,
             background: "#20242a",
             color: "white",
-            fontSize: "20px",
+            border: "1px solid #41464d",
+            borderRadius: 6,
+            fontSize: 20,
             cursor: "pointer",
           }}
         >
           −
         </button>
 
-        {/* SLIDER */}
         <input
           type="range"
           min="-180"
@@ -514,7 +453,6 @@ function JointControl({
           }}
         />
 
-        {/* PLUS */}
         <button
           onClick={() =>
             onChange(
@@ -523,13 +461,13 @@ function JointControl({
             )
           }
           style={{
-            width: "34px",
-            height: "34px",
-            borderRadius: "6px",
-            border: "1px solid #3b4148",
+            width: 34,
+            height: 34,
             background: "#20242a",
             color: "white",
-            fontSize: "20px",
+            border: "1px solid #41464d",
+            borderRadius: 6,
+            fontSize: 20,
             cursor: "pointer",
           }}
         >
@@ -544,15 +482,11 @@ function JointControl({
 
 
 /* =========================================================
-   MAIN APPLICATION
+   APP
    ========================================================= */
 
 function App() {
-
-  const [
-    joints,
-    setJoints,
-  ] = useState([
+  const [joints, setJoints] = useState([
     0,
     0,
     0,
@@ -561,23 +495,16 @@ function App() {
     0,
   ]);
 
-
   const updateJoint = (
     index: number,
     value: number
   ) => {
-
-    setJoints(
-      previous =>
-        previous.map(
-          (joint, i) =>
-            i === index
-              ? value
-              : joint
-        )
+    setJoints((previous) =>
+      previous.map((joint, i) =>
+        i === index ? value : joint
+      )
     );
   };
-
 
   const homeRobot = () => {
     setJoints([
@@ -590,41 +517,32 @@ function App() {
     ]);
   };
 
-
   return (
-
     <div
       style={{
         width: "100vw",
         height: "100vh",
+        display: "flex",
         background: "#080a0d",
         color: "white",
-        display: "flex",
-        fontFamily:
-          "Arial, sans-serif",
+        fontFamily: "Arial, sans-serif",
       }}
     >
 
-      {/* =============================================
-          3D VIEWPORT
-         ============================================= */}
+      {/* ================================
+          SIMULATION
+         ================================ */}
 
-      <div
-        style={{
-          flex: 1,
-        }}
-      >
+      <div style={{ flex: 1 }}>
 
         <Canvas
           camera={{
-            position: [4.5, 3.2, 5.5],
+            position: [4.8, 3.3, 5.8],
             fov: 48,
           }}
         >
 
-          <ambientLight
-            intensity={1.5}
-          />
+          <ambientLight intensity={1.4} />
 
           <directionalLight
             position={[5, 8, 5]}
@@ -636,13 +554,9 @@ function App() {
             intensity={1.5}
           />
 
-          <Environment
-            preset="city"
-          />
+          <Environment preset="city" />
 
-          <RobotArm
-            joints={joints}
-          />
+          <RobotArm joints={joints} />
 
           <Grid
             infiniteGrid
@@ -659,17 +573,16 @@ function App() {
       </div>
 
 
-      {/* =============================================
+      {/* ================================
           TEACH PENDANT
-         ============================================= */}
+         ================================ */}
 
       <div
         style={{
-          width: "350px",
-          padding: "25px",
+          width: 350,
+          padding: 25,
           background: "#15181d",
-          borderLeft:
-            "1px solid #292d33",
+          borderLeft: "1px solid #292d33",
           boxSizing: "border-box",
           overflowY: "auto",
         }}
@@ -678,8 +591,8 @@ function App() {
         <h1
           style={{
             marginTop: 0,
-            fontSize: "24px",
-            letterSpacing: "2px",
+            fontSize: 24,
+            letterSpacing: 2,
           }}
         >
           VIRTUAL ARM
@@ -688,7 +601,7 @@ function App() {
         <p
           style={{
             color: "#8e969f",
-            fontSize: "13px",
+            fontSize: 13,
           }}
         >
           6-AXIS ROBOTIC SIMULATOR
@@ -698,26 +611,25 @@ function App() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            marginBottom: "20px",
+            gap: 8,
+            marginBottom: 20,
           }}
         >
 
           <div
             style={{
-              width: "9px",
-              height: "9px",
+              width: 9,
+              height: 9,
               borderRadius: "50%",
               background: "#35d07f",
-              boxShadow:
-                "0 0 8px #35d07f",
+              boxShadow: "0 0 8px #35d07f",
             }}
           />
 
           <span
             style={{
               color: "#35d07f",
-              fontSize: "12px",
+              fontSize: 12,
             }}
           >
             SIMULATION READY
@@ -725,86 +637,40 @@ function App() {
 
         </div>
 
-
         <hr
           style={{
             borderColor: "#292d33",
           }}
         />
 
-
         <h3>
           JOINT CONTROL
         </h3>
 
-
-        {joints.map(
-          (angle, index) => (
-
-            <JointControl
-              key={index}
-              index={index}
-              value={angle}
-              onChange={updateJoint}
-            />
-
-          )
-        )}
-
+        {joints.map((angle, index) => (
+          <JointControl
+            key={index}
+            index={index}
+            value={angle}
+            onChange={updateJoint}
+          />
+        ))}
 
         <button
           onClick={homeRobot}
           style={{
             width: "100%",
-            padding: "13px",
-            background:
-              ACCENT_COLOR,
+            padding: 13,
+            background: "#d6a84f",
             color: "#111",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: 6,
             fontWeight: "bold",
             cursor: "pointer",
-            fontSize: "14px",
           }}
         >
           HOME POSITION
         </button>
-
-
-        <div
-          style={{
-            marginTop: "22px",
-            padding: "15px",
-            background: "#0e1013",
-            borderRadius: "7px",
-          }}
-        >
-
-          <div
-            style={{
-              color: "#8e969f",
-              fontSize: "12px",
-              marginBottom: "8px",
-            }}
-          >
-            JOINT STATE
-          </div>
-
-          <pre
-            style={{
-              color: ACCENT_COLOR,
-              fontSize: "12px",
-              margin: 0,
-            }}
-          >
-            {JSON.stringify(
-              joints,
-              null,
-              2
-            )}
-          </pre>
-
-        </div>
 
       </div>
 
